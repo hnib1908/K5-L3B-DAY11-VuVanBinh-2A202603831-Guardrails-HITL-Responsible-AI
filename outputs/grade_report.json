@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-21T03:37:41.381420+00:00",
+  "generated_at": "2026-11-21T03:46:31.432698+00:00",
   "submission_dir": "D:\\VinUNI\\K5-L3B-DAY11-VuVanBinh-2A202603831-Guardrails-HITL-Responsible-AI",
   "technical_failure": false,
   "packaging": {
@@ -47,7 +47,7 @@
   },
   "public_tests": {
     "returncode": 0,
-    "stdout": "...........                                                              [100%]\n11 passed in 3.67s\n",
+    "stdout": "...........                                                              [100%]\n============================== warnings summary ===============================\nC:\\Users\\admin\\anaconda3\\Lib\\site-packages\\_pytest\\cacheprovider.py:475\n  C:\\Users\\admin\\anaconda3\\Lib\\site-packages\\_pytest\\cacheprovider.py:475: PytestCacheWarning: could not create cache path D:\\VinUNI\\K5-L3B-DAY11-VuVanBinh-2A202603831-Guardrails-HITL-Responsible-AI\\.pytest_cache\\v\\cache\\nodeids: [WinError 5] Access is denied: 'D:\\\\VinUNI\\\\K5-L3B-DAY11-VuVanBinh-2A202603831-Guardrails-HITL-Responsible-AI\\\\.pytest_cache\\\\v\\\\cache'\n    config.cache.set(\"cache/nodeids\", sorted(self.cached_nodeids))\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n11 passed, 1 warning in 2.18s\n",
     "stderr": "",
     "technical_failure": false
   },

@@ -2,7 +2,7 @@
 
 > File này **tự sinh** bởi `scripts/grade.py`. **Không** viết / sửa tay.
 
-- Generated (UTC): `2026-11-21T03:37:41.381420+00:00`
+- Generated (UTC): `2026-11-21T03:46:31.432698+00:00`
 - Framework: `openai-sdk`
 - Technical failure: **False**
 
@@ -40,7 +40,13 @@
 
 ```text
 ...........                                                              [100%]
-11 passed in 3.67s
+============================== warnings summary ===============================
+C:\Users\admin\anaconda3\Lib\site-packages\_pytest\cacheprovider.py:475
+  C:\Users\admin\anaconda3\Lib\site-packages\_pytest\cacheprovider.py:475: PytestCacheWarning: could not create cache path D:\VinUNI\K5-L3B-DAY11-VuVanBinh-2A202603831-Guardrails-HITL-Responsible-AI\.pytest_cache\v\cache\nodeids: [WinError 5] Access is denied: 'D:\\VinUNI\\K5-L3B-DAY11-VuVanBinh-2A202603831-Guardrails-HITL-Responsible-AI\\.pytest_cache\\v\\cache'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+11 passed, 1 warning in 2.18s
 ```
 
 ## Notes

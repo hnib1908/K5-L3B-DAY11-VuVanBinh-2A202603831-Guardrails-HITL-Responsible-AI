@@ -4,6 +4,8 @@
 > 🎯 **Mục tiêu:** đóng vai **Blue Team** để học cách xây Guardrails phòng thủ, rồi đóng vai **Red Team** để tấn công agent **Red** hoặc **Red Advance**.  
 > ✅ Làm theo **Checkpoint 1 → 5** trong [`CHECKPOINTS.md`](CHECKPOINTS.md) · nộp theo [`SUBMISSION.md`](SUBMISSION.md).
 
+**Học viên** · Vu Van Binh · **MSSV** 2A202603831 · **Lớp** K5-L3B
+
 ---
 
 ## Thời lượng
@@ -160,5 +162,12 @@ pip install -r requirements.txt
 
 Điền `.env`: `OPENROUTER_API_KEY` + `RED_TEAM_PROVIDER=openai|gemini` (và key tương ứng).  
 Rồi mở [`CHECKPOINTS.md`](CHECKPOINTS.md) và làm lần lượt Checkpoint 1 → 5.
+
+Chạy Blue từ gốc repo với `python src/main.py --part 2` để kiểm tra các bộ lọc
+cục bộ, rồi chạy `python src/main.py --part 3` với khóa OpenRouter để tạo
+`results.json`, `audit_log.json` và `metrics.json` trong `outputs/`.
+Audit và monitoring quan sát quyết định của từng yêu cầu. Audit che PII và
+thông tin bí mật trước khi lưu. Nhóm kiểm thử rate limit đo các quyết định
+trước khi gọi model để độ trễ và quota của OpenRouter không làm sai kết quả.
 
 Nộp theo [`SUBMISSION.md`](SUBMISSION.md) · Quy định: [`RULES.md`](RULES.md).

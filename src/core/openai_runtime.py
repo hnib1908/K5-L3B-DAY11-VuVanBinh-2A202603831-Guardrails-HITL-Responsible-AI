@@ -9,6 +9,7 @@ Gemini Red Team dùng Google ADK trong agents/*.py — không đi qua file này.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from inspect import isawaitable
 from typing import Any, Callable
 
 from core.config import (
@@ -34,6 +35,25 @@ class _MockInvocationContext:
 
 
 @dataclass
+class ChatResult:
+    """Response and guardrail decisions for one request."""
+
+    text: str = ""
+    blocked: bool = False
+    layer: str | None = None
+    judge_passed: bool | None = None
+
+    def report_guardrail(
+        self, layer: str, *, changed: bool, blocked: bool, judge_passed: bool | None
+    ) -> None:
+        if changed or blocked:
+            self.layer = layer
+        self.blocked = self.blocked or blocked
+        if judge_passed is not None:
+            self.judge_passed = judge_passed
+
+
+@dataclass
 class OpenAIRunner:
     """Optional ADK-style plugins + Chat Completions."""
 
@@ -51,15 +71,15 @@ class OpenAIRunner:
 
         return OpenAI(**(self.client_kwargs or {}))
 
-    async def chat(self, agent: OpenAIAgent, user_message: str) -> str:
-        for hook in self.input_hooks:
-            blocked = hook(user_message)
-            if blocked:
-                return blocked
+    async def chat(self, agent: OpenAIAgent, user_message: str, *, user_id: str = "student") -> str:
+        return (await self.chat_with_decision(agent, user_message, user_id=user_id)).text
 
-        block_msg = await self._run_input_plugins(user_message)
-        if block_msg is not None:
-            return block_msg
+    async def chat_with_decision(
+        self, agent: OpenAIAgent, user_message: str, *, user_id: str = "student"
+    ) -> ChatResult:
+        denial = await self.check_input(user_message, user_id=user_id)
+        if denial is not None:
+            return denial
 
         client = self._client()
         completion = client.chat.completions.create(
@@ -75,47 +95,44 @@ class OpenAIRunner:
         for hook in self.output_hooks:
             text = hook(text)
 
-        text = await self._run_output_plugins(text)
-        return text
+        result = ChatResult(text=text)
+        await self._run_output_plugins(result)
+        return result
 
-    async def _run_input_plugins(self, user_message: str) -> str | None:
+    async def check_input(self, user_message: str, *, user_id: str = "student") -> ChatResult | None:
+        """Run the same admission checks used before contacting the model."""
+        for hook in self.input_hooks:
+            blocked = hook(user_message)
+            if blocked:
+                return ChatResult(text=blocked, blocked=True, layer="input_hook")
         if not self.plugins:
             return None
-        try:
-            from google.genai import types
-        except ImportError:
-            return None
+        from google.genai import types
 
         user_content = types.Content(
             role="user",
             parts=[types.Part.from_text(text=user_message)],
         )
-        ctx = _MockInvocationContext()
+        ctx = _MockInvocationContext(user_id=user_id)
         for plugin in self.plugins:
             cb = getattr(plugin, "on_user_message_callback", None)
             if cb is None:
                 continue
-            try:
-                result = await cb(
-                    invocation_context=ctx, user_message=user_content
-                )
-            except TypeError:
-                result = cb(invocation_context=ctx, user_message=user_content)
+            result = cb(invocation_context=ctx, user_message=user_content)
+            if isawaitable(result):
+                result = await result
             if result is None:
                 continue
-            return _content_to_text(result)
+            return ChatResult(text=_content_to_text(result), blocked=True, layer=plugin.name)
         return None
 
-    async def _run_output_plugins(self, text: str) -> str:
-        if not self.plugins or not text:
-            return text
-        try:
-            from google.genai import types
-        except ImportError:
-            return text
+    async def _run_output_plugins(self, result: ChatResult) -> None:
+        if not self.plugins or not result.text:
+            return
+        from google.genai import types
 
         content = types.Content(
-            role="model", parts=[types.Part.from_text(text=text)]
+            role="model", parts=[types.Part.from_text(text=result.text)]
         )
 
         class _Resp:
@@ -124,20 +141,16 @@ class OpenAIRunner:
         llm_response = _Resp()
         llm_response.content = content
 
-        class _Ctx:
-            pass
-
         for plugin in self.plugins:
             cb = getattr(plugin, "after_model_callback", None)
             if cb is None:
                 continue
-            try:
-                out = await cb(callback_context=_Ctx(), llm_response=llm_response)
-            except TypeError:
-                out = cb(callback_context=_Ctx(), llm_response=llm_response)
-            if out is not None and getattr(out, "content", None) is not None:
+            out = cb(callback_context=result, llm_response=llm_response)
+            if isawaitable(out):
+                out = await out
+            if out is not None:
                 llm_response = out
-        return _content_to_text(llm_response.content) or text
+        result.text = _content_to_text(llm_response.content)
 
 
 def _content_to_text(content: Any) -> str:

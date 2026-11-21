@@ -63,22 +63,13 @@ async def part3_assignment_suite():
         run_assignment_suite,
     )
 
-    try:
-        plugins = build_production_plugins(use_llm_judge=False)
-        audit, monitor = build_observability()
-        pipeline = {"plugins": plugins, "audit": audit, "monitor": monitor}
-        result = await run_assignment_suite(pipeline)
-        print("Suite finished.")
-        print("Wrote outputs under repo outputs/")
-        return result
-    except NotImplementedError as e:
-        print(
-            "Chưa xong Checkpoint 3 (src/assignment/pipeline.py). "
-            "Hoàn thành rồi chạy lại từ gốc repo:\n"
-            "  python src/main.py --part 3"
-        )
-        print(f"Detail: {e}")
-        return None
+    plugins = build_production_plugins(use_llm_judge=False)
+    audit, monitor = build_observability()
+    pipeline = {"plugins": plugins, "audit": audit, "monitor": monitor}
+    result = await run_assignment_suite(pipeline)
+    print("Suite finished.")
+    print("Wrote outputs under repo outputs/")
+    return result
 
 
 async def part4_attacks():
@@ -134,8 +125,6 @@ async def part4_attacks():
 
 
 async def main(parts=None):
-    setup_api_key()
-
     if parts is None:
         parts = [2, 3, 4]  # Core: CP2 → CP3 → CP4
 
@@ -143,14 +132,16 @@ async def main(parts=None):
         if part == 2:
             await part2_guardrails()
         elif part == 3:
+            setup_api_key(red=False)
             await part3_assignment_suite()
         elif part == 4:
+            setup_api_key(blue=False)
             await part4_attacks()
         else:
             print(f"Unknown part: {part}. Dùng --part 2, 3, hoặc 4.")
 
     print("\n" + "=" * 60)
-    print("Lab 11 complete! Check your results above.")
+    print("Selected checkpoints finished.")
     print("=" * 60)
 
 

@@ -18,6 +18,8 @@ Hai tầng model (không trộn):
 from __future__ import annotations
 
 import os
+import sys
+from getpass import getpass
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -234,24 +236,34 @@ def is_harder_model() -> bool:
     return any(x in m for x in ("gpt-5.6", "pro", "gemini-3.8", "gemini-3.7"))
 
 
-def setup_api_key():
-    """Ensure keys for Blue (OpenRouter) + Red / Red Advance (OpenAI or Gemini)."""
-    if not get_openrouter_api_key():
-        os.environ["OPENROUTER_API_KEY"] = input(
-            "Enter OpenRouter API Key (Blue): "
-        ).strip()
-    print(f"Blue  — {blue_provider_label()}  [LOCKED]")
+def _ensure_api_key(name: str) -> None:
+    key = os.environ.get(name, "").strip()
+    if key and key not in {"sk-or-...", "sk-..."}:
+        return
+    if sys.stdin.isatty():
+        key = getpass(f"Enter {name}: ").strip()
+        if key and key not in {"sk-or-...", "sk-..."}:
+            os.environ[name] = key
+            return
+    raise SystemExit(f"Thiếu {name}. Hãy điền khóa API vào .env hoặc biến môi trường.")
 
-    red = get_red_provider()
+
+def setup_api_key(*, blue: bool = True, red: bool = True):
+    """Ensure keys for the selected checkpoints."""
+    if blue:
+        _ensure_api_key("OPENROUTER_API_KEY")
+        print(f"Blue  — {blue_provider_label()}  [LOCKED]")
+    if not red:
+        return
+
+    provider = get_red_provider()
     model = get_red_model()
-    if red == PROVIDER_GEMINI:
-        if not os.environ.get("GOOGLE_API_KEY", "").strip():
-            os.environ["GOOGLE_API_KEY"] = input("Enter Google API Key (Red): ").strip()
+    if provider == PROVIDER_GEMINI:
+        _ensure_api_key("GOOGLE_API_KEY")
         os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "0"
         print(f"Red / Red Advance  — gemini:{model}")
     else:
-        if not get_openai_api_key():
-            os.environ["OPENAI_API_KEY"] = input("Enter OpenAI API Key (Red): ").strip()
+        _ensure_api_key("OPENAI_API_KEY")
         print(f"Red / Red Advance  — openai:{model}")
 
     print(
